@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forhold i Romsdal</title>
+<style>
+:root{--bg:#f6f5f9;--card:#fff;--fg:#1d1d24;--mut:#5c5c6b;--line:#e3e1ea;--acc:#7B2FBE;--accbg:#f2eafa;--warn:#9a4a00;--warnbg:#fff1e0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg)}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--fg);padding:12px;overflow-x:hidden}
+.wrap{max-width:1200px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;border-bottom:3px solid var(--acc);padding-bottom:8px;margin-bottom:14px}
+h1{margin:0;font-size:20px}
+h2{font-size:16px;margin:0 0 10px}
+.mut{color:var(--mut);font-size:13px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+.days{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.day{border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.badge{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.badge .n{font-size:30px;font-weight:800;line-height:1}
+.badge b{display:block;font-size:16px}
+.badge small{font-size:12px}
+.day p{margin:0;padding:10px 12px;font-size:13.5px}
+.l0{background:#d9d9de;color:#33333b}.l1{background:#56B528;color:#fff}.l2{background:#FFE800;color:#1d1d24}
+.l3{background:#F18700;color:#fff}.l4{background:#E61E1E;color:#fff}.l5{background:#1A1A1A;color:#fff}
+.note{margin:10px 0 0;font-size:13.5px;padding:8px 10px;border-left:3px solid var(--acc);background:var(--accbg);border-radius:0 6px 6px 0}
+.note.hot{border-color:#F18700;background:var(--warnbg)}
+a{color:var(--acc);font-weight:600}
+.best{background:var(--accbg);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.best ol{margin:4px 0 0;padding-left:20px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);white-space:nowrap}
+th button{all:unset;cursor:pointer}
+th[aria-sort] button::after{content:" ▲";font-size:9px}
+th[aria-sort=descending] button::after{content:" ▼"}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.exp td{background:var(--warnbg)}
+.tag{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);border:1px solid currentColor;border-radius:5px;padding:0 5px;margin-left:6px;white-space:nowrap}
+.arr{display:inline-block;width:1em;text-align:center;color:var(--acc);font-weight:800}
+.sub{display:none;font-size:12px;color:var(--mut)}
+.nm{font-weight:600}
+.rep{list-style:none;margin:0;padding:0}
+.rep li{border-bottom:1px solid var(--line);padding:8px 0}
+.rep li:last-child{border:0}
+footer{font-size:12.5px;color:var(--mut);padding:4px 2px 12px}
+.err{color:var(--warn)}
+@media (max-width:600px){body{padding:8px}section{padding:10px}.hm,.vr{display:none}.sub{display:block}th,td{padding:6px 4px}table{font-size:13.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>Forhold i Romsdal</h1><span class="mut" id="upd">Henter data …</span></header>
+<section>
+ <h2>Skredvarsel</h2>
+ <div class="days" id="days"><p class="mut">Henter skredvarsel …</p></div>
+ <p class="note" id="note">Ved faregrad 3 eller høyere: unngå ruter med mye eksponert terreng.</p>
+ <p class="mut" style="margin:8px 0 0"><a href="https://varsom.no/snoskred/varsling/" target="_blank" rel="noopener">Les hele varselet på varsom.no ↗</a></p>
+</section>
+<section>
+ <h2>Vær på toppene <span class="mut" id="when"></span></h2>
+ <div class="best" id="best" hidden></div>
+ <table>
+  <thead><tr>
+   <th data-k="navn"><button>Topp</button></th>
+   <th class="num hm">moh</th>
+   <th class="num" data-k="temp"><button>°C</button></th>
+   <th class="num" data-k="vind"><button>Vind m/s</button></th>
+   <th class="num" data-k="ned"><button>Nedbør 24 t</button></th>
+   <th class="vr">Vær</th>
+  </tr></thead>
+  <tbody id="tb"><tr><td colspan="6" class="mut">Henter ruter …</td></tr></tbody>
+ </table>
+</section>
+<section id="rap">
+ <h2>Siste turrapporter</h2>
+ <p><a href="https://arcg.is/0CyvLX3" target="_blank" rel="noopener">Har du vært på tur? Del forholdene her ↗</a></p>
+ <ul class="rep" id="replist"><li class="mut">Ingen rapporter ennå – bli den første!</li></ul>
+</section>
+<footer>Data: NVE/Varsom og MET Norway. Rutene er beregnet automatisk og ikke kvalitetssikret – turer i fjellet skjer på egen risiko.</footer>
+</div>
+<script>
+(function(){
+var TURRAPPORT_LAYER="https://services1.arcgis.com/DIcffHalFljSYvfk/arcgis/rest/services/survey123_04f51183fd94431aa2fa22863d3b8cfb_results/FeatureServer/0";
+var ROUTES="https://services1.arcgis.com/DIcffHalFljSYvfk/arcgis/rest/services/Randonee_ruter_Romsdal/FeatureServer/0/query?where=1%3D1&outFields=navn,topp_moh,niva,hoydemeter,tur_km,eksponert_m&returnGeometry=true&outSR=4326&f=json";
+var NAVN=["Ikke vurdert","Liten","Moderat","Betydelig","Stor","Meget stor"];
+var DAG=["søndag","mandag","tirsdag","onsdag","torsdag","fredag","lørdag"];
+var KOMP=["N","NØ","Ø","SØ","S","SV","V","NV"];
+var COL=new Intl.Collator("nb",{numeric:true});
+var $=function(id){return document.getElementById(id)};
+var fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",hourCycle:"h23"});
+function oslo(d){var o={};fmt.formatToParts(d).forEach(function(p){o[p.type]=p.value});return{date:o.year+"-"+o.month+"-"+o.day,hour:+o.hour}}
+function addDays(s,n){var p=s.split("-");return new Date(Date.UTC(+p[0],p[1]-1,+p[2]+n,12)).toISOString().slice(0,10)}
+function dayName(s){var p=s.slice(0,10).split("-");return DAG[new Date(Date.UTC(+p[0],p[1]-1,+p[2],12)).getUTCDay()]}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function lvl(x){var n=parseInt(x,10);return n>=1&&n<=5?n:0}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function getJSON(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+function ss(k,v){try{if(v===undefined){var x=JSON.parse(sessionStorage.getItem(k));return x&&Date.now()-x.t<18e5?x.d:null}sessionStorage.setItem(k,JSON.stringify({t:Date.now(),d:v}))}catch(e){return null}}
+var today=oslo(new Date()).date,dangerToday=0,rows=[],sortK="navn",sortDir=1,wxDone=false;
+getJSON("https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByRegion/Simple/3023/1/"+today+"/"+addDays(today,2)).then(function(a){
+ if(!Array.isArray(a)||!a.length)throw 0;
+ a.sort(function(x,y){return x.ValidFrom<y.ValidFrom?-1:1});
+ dangerToday=lvl(a[0].DangerLevel);
+ $("days").innerHTML=a.slice(0,3).map(function(d,i){var l=lvl(d.DangerLevel);
+  var txt=d.MainText||(l?"":"Det er ikke laget varsel for denne dagen – trolig utenfor sesong.");
+  return '<div class="day"><div class="badge l'+l+'"><span class="n">'+(l||"–")+'</span><span><small>'+(i?cap(dayName(d.ValidFrom)):"I dag")+'</small><b>'+NAVN[l]+'</b></span></div><p>'+esc(txt)+'</p></div>'}).join("");
+ if(dangerToday>=3){$("note").classList.add("hot");$("note").textContent="Faregrad "+dangerToday+" i dag. Unngå ruter med mye eksponert terreng. Ruter med over 300 m eksponert terreng er merket i tabellen."}
+ render();if(wxDone)best();
+}).catch(function(){$("days").innerHTML='<p class="err">Fikk ikke hentet skredvarselet. Sjekk varsom.no direkte.</p>'});
+function sym(c){if(!c)return"–";var b=c.replace(/_(day|night|polartwilight)$/,"");
+ if(/thunder/.test(b))return"Torden";
+ var sh=/showers$/.test(b);b=b.replace(/showers$/,"");
+ var M={clearsky:"Klart",fair:"Lettskyet",partlycloudy:"Delvis skyet",cloudy:"Skyet",fog:"Tåke",rain:"Regn",lightrain:"Lett regn",heavyrain:"Kraftig regn",snow:"Snø",lightsnow:"Lett snø",heavysnow:"Kraftig snø"};
+ var S={rain:"Regnbyger",lightrain:"Lette regnbyger",heavyrain:"Kraftige regnbyger",snow:"Snøbyger",lightsnow:"Lette snøbyger",heavysnow:"Kraftige snøbyger"};
+ if(/sleet/.test(b))return sh?"Sluddbyger":"Sludd";
+ return (sh?S[b]:M[b])||c}
+function parseWx(j){
+ var ts=j.properties.timeseries,now=Date.now(),pick=null,i;
+ for(i=0;i<ts.length;i++){var o=oslo(new Date(ts[i].time));if(o.date===today&&o.hour===12){pick=ts[i];break}}
+ if(!pick||Date.parse(pick.time)+36e5<now){pick=ts[0];for(i=0;i<ts.length;i++)if(Date.parse(ts[i].time)+36e5>now){pick=ts[i];break}}
+ var t0=Date.parse(ts[0].time),end=t0+864e5,cov=t0,sum=0;
+ for(i=0;i<ts.length;i++){var t=Date.parse(ts[i].time),d=ts[i].data;if(t>=end)break;
+  if(d.next_1_hours&&t>=cov){sum+=d.next_1_hours.details.precipitation_amount||0;cov=t+36e5}
+  else if(d.next_6_hours&&t>=cov){var p=d.next_6_hours.details.precipitation_amount||0;sum+=p*Math.min(1,(end-t)/216e5);cov=t+216e5}}
+ var dd=pick.data,n=dd.next_1_hours||dd.next_6_hours||dd.next_12_hours,det=dd.instant.details;
+ return{time:pick.time,temp:det.air_temperature,vind:det.wind_speed,dir:det.wind_from_direction,sym:n&&n.summary.symbol_code,ned:Math.round(sum*10)/10}}
+function wx(r){var u="https://api.met.no/weatherapi/locationforecast/2.0/compact?lat="+r.lat.toFixed(4)+"&lon="+r.lon.toFixed(4)+"&altitude="+Math.round(r.moh||0);
+ var c=ss("wx:"+u);if(c)return Promise.resolve(c);
+ return getJSON(u).then(function(j){var w=parseWx(j);ss("wx:"+u,w);return w})}
+function pool(list,n,fn){var i=0;function next(){if(i>=list.length)return Promise.resolve();var x=list[i++];return fn(x).then(next,next)}
+ var w=[];for(var k=0;k<n;k++)w.push(next());return Promise.all(w)}
+getJSON(ROUTES).then(function(j){
+ if(!j.features)throw 0;
+ rows=j.features.map(function(f){var a=f.attributes,p=f.geometry&&f.geometry.paths&&f.geometry.paths[0];var v=p&&p[p.length-1];
+  return{navn:a.navn||"Uten navn",moh:a.topp_moh,eks:a.eksponert_m,lon:v?v[0]:null,lat:v?v[1]:null,w:null,st:"…"}}).filter(function(r){return r.lat!=null});
+ var done=0;render();
+ return pool(rows,4,function(r){return wx(r).then(function(w){r.w=w},function(){r.st="–"}).then(function(){done++;$("upd").textContent="Henter vær … "+done+" av "+rows.length;render()})});
+}).then(function(){
+ var ok=rows.some(function(r){return r.w});
+ $("upd").textContent=ok?"Oppdatert "+new Date().toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"}):"Fikk ikke hentet værdata";
+ var t=rows.filter(function(r){return r.w})[0];
+ if(t){var o=oslo(new Date(t.w.time));$("when").textContent="– "+(o.date===today?"i dag":dayName(o.date))+" kl. "+String(o.hour).padStart(2,"0")}
+ wxDone=true;best();render();
+}).catch(function(){$("tb").innerHTML='<tr><td colspan="6" class="err">Fikk ikke hentet rutene. Prøv å laste siden på nytt.</td></tr>';$("upd").textContent="Noe gikk galt"});
+function best(){
+ var c=rows.filter(function(r){return r.w&&r.w.ned<=1}).sort(function(a,b){return a.w.vind-b.w.vind||a.w.ned-b.w.ned}).slice(0,3);
+ var b=$("best");b.hidden=false;
+ b.innerHTML=c.length?'<strong>Best i dag</strong> <span class="mut">– minst vind og lite nedbør</span><ol>'+c.map(function(r){return"<li><b>"+esc(r.navn)+"</b> · "+r.w.vind.toFixed(1)+" m/s, "+r.w.ned+" mm"+(dangerToday>=3&&r.eks>300?' <span class="tag">Eksponert</span>':"")+"</li>"}).join("")+"</ol>"
+  :"<strong>Best i dag</strong><br><span class=\"mut\">Det er meldt nedbør på alle toppene det neste døgnet.</span>"}
+function val(r,k){if(k==="navn")return r.navn.toLowerCase();return r.w?r.w[k]:null}
+function render(){
+ if(!rows.length)return;
+ var s=rows.slice().sort(function(a,b){var x=val(a,sortK),y=val(b,sortK);if(x==null)return 1;if(y==null)return-1;return(sortK==="navn"?COL.compare(x,y):x<y?-1:x>y?1:0)*sortDir});
+ $("tb").innerHTML=s.map(function(r){var w=r.w,exp=dangerToday>=3&&r.eks>300;
+  var tag=exp?'<span class="tag" title="'+Math.round(r.eks)+' m eksponert terreng">Eksponert</span>':"";
+  var wind=w?'<span class="arr" style="transform:rotate('+((w.dir+180)%360)+'deg)" aria-hidden="true">↑</span> '+w.vind.toFixed(1)+' <span class="mut">'+KOMP[Math.round(w.dir/45)%8]+'</span>':r.st;
+  return'<tr'+(exp?' class="exp"':"")+'><td><span class="nm">'+esc(r.navn)+'</span>'+tag+'<span class="sub">'+(r.moh!=null?Math.round(r.moh)+" moh":"")+(w?" · "+sym(w.sym):"")+'</span></td>'+
+  '<td class="num hm">'+(r.moh!=null?Math.round(r.moh):"–")+'</td>'+
+  '<td class="num">'+(w?Math.round(w.temp):r.st)+'</td>'+
+  '<td class="num" title="'+(w?"Vind fra "+Math.round(w.dir)+"°":"")+'">'+wind+'</td>'+
+  '<td class="num">'+(w?w.ned.toFixed(1)+" mm":r.st)+'</td>'+
+  '<td class="vr">'+(w?sym(w.sym):r.st)+'</td></tr>'}).join("");
+ document.querySelectorAll("th[data-k]").forEach(function(th){if(th.dataset.k===sortK)th.setAttribute("aria-sort",sortDir>0?"ascending":"descending");else th.removeAttribute("aria-sort")})}
+document.querySelectorAll("th[data-k] button").forEach(function(b){b.onclick=function(){var k=b.parentNode.dataset.k;if(k===sortK)sortDir=-sortDir;else{sortK=k;sortDir=1}render()}});
+getJSON(TURRAPPORT_LAYER+"/query?where=1%3D1&outFields=*&orderByFields=CreationDate%20DESC&resultRecordCount=10&f=json").then(function(j){
+ var f=(j.features||[]).map(function(x){return x.attributes});if(!f.length)return;
+ function g(a,ks){for(var i=0;i<ks.length;i++)if(a[ks[i]]!=null&&a[ks[i]]!=="")return a[ks[i]];return null}
+ $("replist").innerHTML=f.map(function(a){var r=g(a,["rute"]),fo=g(a,["f_re"]),sk=g(a,["s_du_tegn_p_skredaktivitet"]),k=g(a,["kommentar_forhold_vind_tips_til"]),d=a.dato_for_turen||a.CreationDate;
+  return"<li>"+(r?"<b>"+esc(String(r).replace(/_/g," "))+"</b>":"")+(d?' <span class="mut">'+new Date(d).toLocaleDateString("nb-NO",{day:"numeric",month:"short"})+"</span>":"")+
+  (fo?"<div>Føre: "+esc(String(fo).replace(/_/g," "))+"</div>":"")+(sk&&!/^nei$/i.test(sk)?"<div><b>Skredtegn: "+esc(String(sk).replace(/_/g," "))+"</b></div>":"")+(k?"<div>"+esc(k)+"</div>":"")+"</li>"}).join("");
+}).catch(function(){});
+})();
+</script>
+</body>
+</html>

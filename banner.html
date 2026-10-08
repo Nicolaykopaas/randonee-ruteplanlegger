@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skredvarsel Romsdal</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d24;--mut:#5c5c6b;--line:#e3e1ea;--acc:#7B2FBE}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent}
+body{font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--fg);padding:4px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:240px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+h1{font-size:13px;margin:0;font-weight:650}
+.pub{font-size:11px;color:var(--mut)}
+.row{display:flex;gap:8px;align-items:stretch;margin-top:8px}
+.big{flex:1;display:flex;align-items:center;gap:10px;border-radius:9px;padding:6px 10px;min-width:0}
+.big .n{font-size:28px;font-weight:800;line-height:1}
+.big .t{font-size:12px;line-height:1.2}
+.big .t b{display:block;font-size:15px}
+.sm{width:56px;border-radius:9px;text-align:center;padding:5px 2px;font-size:11px;display:flex;flex-direction:column;justify-content:center}
+.sm .n{font-size:18px;font-weight:800;line-height:1.1}
+.l0{background:#d9d9de;color:#33333b}.l1{background:#56B528;color:#fff}.l2{background:#FFE800;color:#1d1d24}
+.l3{background:#F18700;color:#fff}.l4{background:#E61E1E;color:#fff}.l5{background:#1A1A1A;color:#fff}
+.txt{margin:7px 0 0;font-size:12.5px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;background:none;border:0;padding:0;text-align:left;width:100%;font-family:inherit}
+.txt.open{white-space:normal}
+a{color:var(--acc);font-size:12px;font-weight:600;text-decoration:none;display:inline-block;margin-top:5px}
+.msg{color:var(--mut);font-size:13px;padding:14px 0}
+</style>
+</head>
+<body>
+<div class="card" id="c" aria-live="polite"><div class="top"><h1>Skredvarsel Romsdal</h1></div><div class="msg">Henter …</div></div>
+<script>
+(function(){
+var NAVN=["Ikke vurdert","Liten","Moderat","Betydelig","Stor","Meget stor"];
+var DAG=["søn","man","tir","ons","tor","fre","lør"];
+var LINK="https://varsom.no/snoskred/varsling/";
+function osloDate(d){return new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function addDays(s,n){var p=s.split("-");return new Date(Date.UTC(+p[0],p[1]-1,+p[2]+n,12)).toISOString().slice(0,10)}
+function wd(s){var p=s.slice(0,10).split("-");return DAG[new Date(Date.UTC(+p[0],p[1]-1,+p[2],12)).getUTCDay()]}
+function lvl(x){var n=parseInt(x,10);return n>=1&&n<=5?n:0}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var c=document.getElementById("c");
+function head(x){return '<div class="top"><h1>Skredvarsel Romsdal</h1><span class="pub">'+(x||"")+'</span></div>'}
+var t=osloDate(new Date());
+fetch("https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api/AvalancheWarningByRegion/Simple/3023/1/"+t+"/"+addDays(t,2)).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(a){
+ if(!Array.isArray(a)||!a.length)throw 0;
+ a.sort(function(x,y){return x.ValidFrom<y.ValidFrom?-1:1});
+ var d0=a[0],L=lvl(d0.DangerLevel),pub="";
+ if(d0.PublishTime){var pd=new Date(d0.PublishTime);if(!isNaN(pd))pub="Publisert "+pd.toLocaleString("nb-NO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+ var h=head(esc(pub))+'<div class="row"><div class="big l'+L+'"><span class="n">'+(L||"–")+'</span><span class="t">I dag<b>'+NAVN[L]+'</b></span></div>';
+ for(var i=1;i<a.length&&i<3;i++){var l=lvl(a[i].DangerLevel);h+='<div class="sm l'+l+'" title="'+NAVN[l]+'"><span>'+wd(a[i].ValidFrom)+'</span><span class="n">'+(l||"–")+'</span></div>'}
+ h+='</div>';
+ var mt=d0.MainText||(L?"":"Det er ikke laget varsel for denne perioden – trolig utenfor sesong.");
+ if(mt)h+='<button class="txt" id="mt">'+esc(mt)+'</button>';
+ h+='<a href="'+LINK+'" target="_blank" rel="noopener">Les varselet på varsom.no ↗</a>';
+ c.innerHTML=h;var b=document.getElementById("mt");if(b)b.onclick=function(){b.classList.toggle("open")};
+}).catch(function(){c.innerHTML=head()+'<div class="msg">Fikk ikke hentet skredvarselet akkurat nå.</div><a href="'+LINK+'" target="_blank" rel="noopener">Sjekk varsom.no ↗</a>'});
+})();
+</script>
+</body>
+</html>
