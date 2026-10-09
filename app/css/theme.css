@@ -1,0 +1,553 @@
+/* Randonee ruteplanlegger – «Night Summit»: designsystem, global layout, tema, faner, velkomst, mobil bunnark.
+   Eies av theme.css/mobile.js. Andre moduler bruker kun variablene under. */
+
+/* ---------- Variabler: mørk (standard) ---------- */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d0b16;
+  --bg-grad: linear-gradient(160deg, #0d0b16 0%, #1b1530 100%);
+  --scrim: rgba(8, 6, 14, .68);
+  --glass: rgba(20, 18, 30, .62);
+  --glass-strong: rgba(20, 18, 30, .9);
+  --glass-border: rgba(255, 255, 255, .14);
+  --blur: 18px;
+  --fg: #ffffff;
+  --fg-mut: #e4e1f1;
+  --fg-faint: #bdb9d2;
+  --line: rgba(255, 255, 255, .14);
+  --chip: rgba(255, 255, 255, .08);
+  --chip-on: rgba(0, 200, 255, .22);
+  --acc1: #00C8FF;
+  --acc2: #FF3EDB;
+  --grad: linear-gradient(90deg, var(--acc1), var(--acc2));
+  --grad-text: linear-gradient(90deg, #33d3ff, #ff6fe9);
+  --acc-text: #94eaff;
+  --acc-text-2: #ff8aec;
+  --lett: #00C8FF;
+  --middels: #FF3EDB;
+  --krevende: #FFFFFF;
+  --warn: #ff5a5f;
+  --warn-bg: rgba(255, 90, 95, .16);
+  --focus: #5fe0ff;
+  --scroll-thumb: rgba(255, 255, 255, .28);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 10px 40px rgba(0, 0, 0, .45);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --panel-w: 340px;
+  --gap: 12px;
+  --d0: #8A8A96;
+  --d1: #56B528;
+  --d2: #FFE800;
+  --d3: #F18700;
+  --d4: #E61E1E;
+  --d5: #1A1A1A;
+  --controls-h: 290px;
+  --sheet-min: 104px;
+}
+
+/* ---------- Variabler: lys (må komme etter mørk) ---------- */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e9edf5;
+  --bg-grad: linear-gradient(160deg, #f4f6fb 0%, #dde4f0 100%);
+  --scrim: rgba(233, 237, 245, .7);
+  --glass: rgba(255, 255, 255, .74);
+  --glass-strong: rgba(255, 255, 255, .94);
+  --glass-border: rgba(21, 19, 31, .14);
+  --fg: #15131f;
+  --fg-mut: #44405a;
+  --fg-faint: #5f5b75;
+  --line: rgba(21, 19, 31, .14);
+  --chip: rgba(21, 19, 31, .06);
+  --chip-on: rgba(0, 119, 168, .16);
+  --grad-text: linear-gradient(90deg, #006d99, #a3128a);
+  --acc-text: #00608a;
+  --acc-text-2: #a3128a;
+  --krevende: #1d1d24;
+  --warn: #c4161c;
+  --warn-bg: rgba(196, 22, 28, .1);
+  --focus: #005f87;
+  --scroll-thumb: rgba(21, 19, 31, .3);
+  --shadow: 0 10px 36px rgba(30, 25, 60, .18);
+}
+
+/* Uten backdrop-filter: mer dekkende glass så teksten fortsatt leses */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  [data-theme="dark"] { --glass: rgba(20, 18, 30, .93); --glass-strong: rgba(20, 18, 30, .98); }
+  [data-theme="light"] { --glass: rgba(255, 255, 255, .95); --glass-strong: rgba(255, 255, 255, .98); }
+}
+
+/* ---------- Reset / base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;
+  overflow-x: hidden;
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+h1, h2, h3, p { margin: 0; }
+a { color: var(--acc-text); text-underline-offset: 2px; }
+img, svg { max-width: 100%; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+
+/* ---------- Hjelpeklasser ---------- */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.muted { color: var(--fg-mut); }
+
+.skip, .skip-lenke {
+  position: fixed;
+  top: 12px; left: 12px;
+  z-index: 300;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.skip:focus, .skip:focus-visible, .skip-lenke:focus, .skip-lenke:focus-visible { transform: none; }
+
+.grad-text { color: var(--acc-text); }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .grad-text {
+    background-image: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+}
+
+/* Glass-panel */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+}
+
+/* Knapper */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--chip);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .18s, box-shadow .18s, border-color .18s, transform .18s;
+}
+.btn:hover { background: var(--chip-on); }
+.btn:active { transform: translateY(1px); }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.btn--primary {
+  background: var(--grad);
+  border-color: transparent;
+  color: #0d0b16;
+  font-weight: 700;
+}
+.btn--primary:hover {
+  background: var(--grad);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .25), 0 6px 24px rgba(0, 200, 255, .38), 0 0 30px rgba(255, 62, 219, .32);
+}
+.btn--ghost { background: transparent; border-color: var(--glass-border); }
+.btn--ghost:hover { background: var(--chip); border-color: var(--fg-faint); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--chip);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color .18s, border-color .18s;
+}
+.chip:hover { border-color: var(--fg-faint); }
+.chip[aria-pressed="true"] {
+  background: var(--chip-on);
+  border-color: var(--acc-text);
+  font-weight: 600;
+}
+
+/* Nivåprikk */
+.lvl-dot {
+  --dot: var(--middels);
+  display: inline-block;
+  flex: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--dot);
+  box-shadow: 0 0 8px 1px var(--dot);
+}
+.lvl-dot[data-niva="Lett"] { --dot: var(--lett); }
+.lvl-dot[data-niva="Middels"] { --dot: var(--middels); }
+.lvl-dot[data-niva="Krevende"] { --dot: var(--krevende); }
+[data-theme="light"] .lvl-dot { box-shadow: 0 0 0 1px rgba(21, 19, 31, .3), 0 0 6px var(--dot); }
+
+/* ---------- Kart og bakgrunn ---------- */
+#map, .map {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--bg);
+  background-image: var(--bg-grad);
+}
+
+/* ---------- Venstrepanel (desktop) ---------- */
+#left {
+  position: fixed;
+  top: var(--gap); left: var(--gap); bottom: var(--gap);
+  z-index: 10;
+  width: var(--panel-w);
+  max-width: calc(100vw - 2 * var(--gap));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#left:focus { outline: none; }
+#left:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.sheet-handle { display: none; }
+
+.brand { flex: none; padding: 18px 18px 10px; }
+.brand__title { font-size: 20px; font-weight: 750; line-height: 1.15; letter-spacing: -.01em; }
+.brand__sub { margin-top: 3px; color: var(--fg-mut); font-size: 13px; }
+.brand__count { display: none; }
+
+.tabs {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 10px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--fg-mut);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color .18s, background-color .18s;
+}
+.tab:hover { color: var(--fg); background: var(--chip); }
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 12%; right: 12%; bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--grad);
+  transform: scaleX(0);
+  opacity: 0;
+  transition: transform .22s ease, opacity .22s ease;
+}
+.tab[aria-selected="true"] { color: var(--fg); }
+.tab[aria-selected="true"]::after { transform: scaleX(1); opacity: 1; }
+.tab:focus-visible { outline-offset: -2px; }
+
+.panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px 16px;
+}
+
+/* ---------- Høyrepanel / turkort (desktop) ---------- */
+#right {
+  position: fixed;
+  top: var(--gap); right: var(--gap);
+  z-index: 11;
+  width: 340px;
+  max-width: calc(100vw - 2 * var(--gap));
+  max-height: calc(100% - 2 * var(--gap));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (min-width: 768px) { body.has-card #controls { right: calc(340px + 2 * var(--gap)); } }
+
+/* ---------- Tegnforklaring ---------- */
+#legend, .legend {
+  position: fixed;
+  right: 72px; bottom: 24px;
+  z-index: 12;
+  width: 260px;
+  max-width: calc(100vw - 96px);
+  max-height: calc(var(--controls-h) - 30px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+/* Skredfare-ring: kun mobil */
+#danger-mini { display: none; }
+
+/* ---------- Toasts ---------- */
+.toasts, #toasts {
+  position: fixed;
+  left: 50%; bottom: 24px;
+  z-index: 250;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  pointer-events: none;
+}
+body.is-flying #toasts { bottom: 100px; }
+.toast {
+  pointer-events: auto;
+  max-width: 100%;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: center;
+  animation: rr-toast-in .28s ease both;
+  transition: opacity .35s, transform .35s;
+}
+.toast--error { border-color: var(--warn); }
+.toast--out { opacity: 0; transform: translateY(8px); }
+@keyframes rr-toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Loader ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  transition: opacity .5s ease, visibility .5s;
+}
+.loader--out { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader__ring {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--acc1), var(--acc2), var(--acc1));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  filter: drop-shadow(0 0 10px rgba(0, 200, 255, .5)) drop-shadow(0 0 16px rgba(255, 62, 219, .35));
+  animation: rr-spin 1.3s linear infinite, rr-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rr-spin { to { transform: rotate(360deg); } }
+@keyframes rr-pulse { 0%, 100% { opacity: .65; scale: .92; } 50% { opacity: 1; scale: 1.06; } }
+
+/* ---------- Velkomstdialog ---------- */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: rr-fade .3s ease both;
+}
+.welcome__card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--glass-strong);
+  border-radius: 20px;
+  animation: rr-pop .35s ease both;
+}
+.welcome__card:focus { outline: none; }
+.welcome__logo { display: block; width: 44px; height: 44px; margin-bottom: 12px; }
+.welcome__title { font-size: 24px; line-height: 1.2; font-weight: 750; letter-spacing: -.01em; }
+.welcome__lead { margin-top: 10px; color: var(--fg-mut); font-size: 15px; }
+.welcome__safety {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.welcome__safety a { font-weight: 600; }
+.welcome__actions { margin-top: 20px; display: flex; }
+.welcome__actions .btn { flex: 1 1 auto; }
+@keyframes rr-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rr-pop { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* ---------- Mobil: bunnark (<768 px) ---------- */
+@media (max-width: 767.98px) {
+  #left, #right {
+    position: fixed;
+    top: auto;
+    left: 0; right: 0; bottom: 0;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    height: calc(var(--sheet-h, var(--sheet-min)) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+    border-bottom: 0;
+    background: var(--glass-strong);
+    transition: height .28s cubic-bezier(.2, .8, .2, 1);
+  }
+  #right { z-index: 14; }
+  body.has-card #right { max-height: none; }
+  body.has-card #left { visibility: hidden; pointer-events: none; }
+  body.sheet-dragging #left, body.sheet-dragging #right { transition: none; }
+
+  #right #card {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sheet-handle {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    cursor: grab;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .sheet-handle:active { cursor: grabbing; }
+  .sheet-handle > span {
+    display: block;
+    width: 44px; height: 5px;
+    border-radius: 5px;
+    background: var(--fg-faint);
+    opacity: .75;
+  }
+  .sheet-handle:focus-visible { outline-offset: -3px; border-radius: 20px 20px 0 0; }
+
+  .brand { padding: 0 16px 8px; touch-action: none; }
+  .brand__title { font-size: 17px; }
+  .brand__sub { display: none; }
+  .brand__count { display: block; margin-top: 2px; color: var(--fg-mut); font-size: 13px; }
+  .tabs { padding: 0 10px; }
+  .panel-scroll { padding: 10px 12px 14px; -webkit-overflow-scrolling: touch; }
+
+  /* Minimert ark: skjul innhold som er klippet bort (ut av tab-rekkefølge) */
+  body.sheet-min #left .tabs,
+  body.sheet-min #left .panel-scroll,
+  body.sheet-min #right #card { visibility: hidden; }
+
+  #danger-mini {
+    display: block;
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: 12px;
+    z-index: 8;
+  }
+
+  #legend, .legend {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: 64px;
+    bottom: auto;
+    width: min(260px, calc(100vw - 88px));
+    max-width: none;
+    max-height: 50vh;
+    z-index: 16;
+  }
+
+  #toasts { bottom: auto; top: calc(68px + env(safe-area-inset-top, 0px)); }
+  body.is-flying #toasts { bottom: auto; }
+
+  .welcome__card { padding: 20px; }
+  .welcome__title { font-size: 22px; }
+}
+
+/* ---------- Redusert bevegelse ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .loader__ring { animation: none !important; }
+}
+
+/* Programmatisk fokus (tabindex=-1) skal ikke vise ring */
+[tabindex="-1"]:focus { outline: none; }
