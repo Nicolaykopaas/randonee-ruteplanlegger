@@ -114,6 +114,18 @@
       function fin(v) { if (!done) { done = true; clearTimeout(timer); resolve(v); } }
       var timer = setTimeout(function () { fin(null); }, ELEV_TIMEOUT_MS);
       try {
+        // Rask vei: synkron sampling fra terrenget som allerede er lastet i 3D-visningen.
+        var gv = RR.view && RR.view.type === "3d" && RR.view.groundView;
+        var smp = gv && gv.elevationSampler;
+        if (smp && smp.queryElevation) {
+          var fast = smp.queryElevation(new RR.esri.Polyline({ paths: [coords], spatialReference: sr() }));
+          var fp = fast && fast.paths && fast.paths[0];
+          if (fp && fp.length === coords.length) {
+            var zs = fp.map(function (v) { var z = v[2]; return typeof z === "number" && isFinite(z) && z > -500 ? z : NaN; });
+            var ok = zs.filter(function (z) { return !isNaN(z); }).length;
+            if (ok > zs.length * 0.8) return fin(zs);
+          }
+        }
         var g = RR.ground || (RR.view && RR.view.map && RR.view.map.ground);
         if (!g || !g.queryElevation) return fin(null);
         var pl = new RR.esri.Polyline({ paths: [coords], spatialReference: sr() });
