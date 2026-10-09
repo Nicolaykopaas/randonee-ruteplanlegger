@@ -166,7 +166,7 @@
     if (mode === "3d") {
       return [
         { type: "point-3d", symbolLayers: [{ type: "icon", resource: { primitive: "triangle" }, material: { color: [255, 255, 255, 1] }, outline: { color: [0, 0, 0, 0.7], size: 1.2 }, size: 12 }] },
-        { type: "label-3d", symbolLayers: [{ type: "text", text: text, size: 11, material: { color: [255, 255, 255, 1] },
+        { type: "point-3d", symbolLayers: [{ type: "text", text: text, size: 11, material: { color: [255, 255, 255, 1] },
           halo: { color: [10, 8, 20, 0.85], size: 1.6 }, font: { weight: "bold" } }],
           verticalOffset: { screenLength: 30, maxWorldLength: 500, minWorldLength: 10 },
           callout: { type: "line", size: 1, color: [255, 255, 255, 0.85] } }
@@ -238,7 +238,13 @@
     map = new E.Map({ basemap: basemap, ground: ground });
     map.addMany([steepLayer, routesLayer, hlLayer, pointsLayer, topLayer, locLayer]);
 
-    imageryLayer.load().catch(function () { warnOnce("img", "Flyfoto kunne ikke lastes. Kartet vises uten bakgrunnsbilde."); });
+    imageryLayer.load().catch(function () {
+      // Uten flyfoto mangler 3D-scenen flisskjema og blir blank – fall tilbake til 2D.
+      if (S.mode === "3d") {
+        warnOnce("img", "Flyfoto kunne ikke lastes. Viser enkelt 2D-kart.");
+        setMode("2d");
+      } else warnOnce("img", "Flyfoto kunne ikke lastes. Kartet vises uten bakgrunnsbilde.");
+    });
     terrainLayer.load().catch(function () { warnOnce("ter", "Terrengdata kunne ikke lastes. Kartet vises uten høyde."); });
     steepLayer.load().catch(function () { warnOnce("steep", "Bratthetskartet fra NVE kunne ikke lastes."); });
   }

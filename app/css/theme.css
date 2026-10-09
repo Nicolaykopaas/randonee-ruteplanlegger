@@ -323,7 +323,7 @@ img, svg { max-width: 100%; }
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-body.has-card #right { max-height: calc(100% - 2 * var(--gap) - var(--controls-h)); }
+@media (min-width: 768px) { body.has-card #controls { right: calc(340px + 2 * var(--gap)); } }
 
 /* ---------- Tegnforklaring ---------- */
 #legend, .legend {
@@ -548,3 +548,6 @@ body.is-flying #toasts { bottom: 100px; }
   }
   .loader__ring { animation: none !important; }
 }
+
+/* Programmatisk fokus (tabindex=-1) skal ikke vise ring */
+[tabindex="-1"]:focus { outline: none; }

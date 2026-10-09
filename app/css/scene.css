@@ -74,7 +74,7 @@ body.has-card .scene-view .esri-ui-bottom-right { right: 72px; }
   border-radius: var(--radius, 16px);
 }
 #legend.legend[hidden] { display: none; }
-body.has-card #legend.legend { right: 376px; }
+body.has-card #legend.legend { right: 432px; }
 .scene-legend__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .scene-legend__title { margin: 0; font-size: 14px; font-weight: 700; }
 .scene-legend__close {

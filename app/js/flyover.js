@@ -534,7 +534,7 @@
       }
       if (flyId != null) stop();      // ny view midt i flyover
     });
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     document.addEventListener("visibilitychange", function () {
       autoPaused = !!document.hidden;
       lastTs = 0;
