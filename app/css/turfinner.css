@@ -1,0 +1,106 @@
+/* Turfinner-fanen. Kun tema-variabler fra theme.css; gjenbruker .panel-chip/.panel-range fra panel.css. */
+
+#finner, #finner * { box-sizing: border-box; }
+#finner { min-width: 0; }
+.tf { display: flex; flex-direction: column; gap: 14px; min-width: 0; color: var(--fg); }
+
+.tf button:focus-visible, .tf input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.tf-title { margin: 0; font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--fg-mut); }
+.tf-intro { margin: -6px 0 0; font-size: 14px; line-height: 1.45; color: var(--fg); }
+
+/* spørsmål */
+.tf-q { min-width: 0; }
+.tf-q__h { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--fg); }
+
+.tf-seg {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px;
+  padding: 3px; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--glass-border);
+}
+.tf-seg button {
+  min-width: 0; min-height: 38px; padding: 0 8px; margin: 0;
+  border: 0; border-radius: 999px; background: transparent; color: var(--fg-mut);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.tf-seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--fg); box-shadow: inset 0 0 0 1px var(--acc-text); }
+
+.tf .panel-field { margin-top: 10px; }
+
+.tf-geo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.tf-geobtn { min-height: 40px; padding: 0 16px; font-size: 14px; font-weight: 600; }
+.tf-geobtn[disabled] { opacity: .6; cursor: progress; }
+.tf-geomsg { min-width: 0; font-size: 13px; color: var(--fg-mut); }
+.tf-geomsg--err { color: var(--warn); }
+
+.tf-go { width: 100%; }
+
+/* resultat */
+.tf-res { min-width: 0; }
+.tf-h { margin: 4px 0 6px; font-size: 18px; line-height: 1.25; font-weight: 800; color: var(--fg); }
+.tf-h:focus { outline: none; }
+
+.tf-dg { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--fg-mut); }
+.tf-dg b { color: var(--fg); }
+.tf-dg__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--dc, var(--d0)); box-shadow: 0 0 0 1px var(--glass-border); }
+.tf-dg[data-l="1"] { --dc: var(--d1); }
+.tf-dg[data-l="2"] { --dc: var(--d2); }
+.tf-dg[data-l="3"] { --dc: var(--d3); }
+.tf-dg[data-l="4"] { --dc: var(--d4); }
+.tf-dg[data-l="5"] { --dc: var(--d5); }
+
+.tf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tf-list > li { min-width: 0; }
+
+.tf-card {
+  position: relative; display: flex; align-items: flex-start; gap: 12px;
+  width: 100%; margin: 0; padding: 12px; text-align: left; font: inherit; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--glass-border); border-radius: 14px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.tf-card:hover { background: var(--chip-on); }
+.tf-card[aria-current="true"] { background: var(--chip-on); border-color: var(--acc-text); }
+
+.tf-rank {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--grad); color: #0d0b16; font-size: 15px; font-weight: 800; line-height: 1;
+}
+.tf-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
+.tf-name { font-size: 16px; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; }
+.tf-name .lvl-dot { margin-left: 4px; }
+.tf-meta, .tf-wx { font-size: 13px; line-height: 1.4; color: var(--fg-mut); font-variant-numeric: tabular-nums; }
+.tf-wx { color: var(--fg); }
+
+.tf-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 4px 0 0; padding: 0; }
+.tf-tag {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 12px; line-height: 1.4; font-weight: 600; color: var(--fg);
+  background: var(--chip-on); border: 1px solid var(--glass-border);
+}
+.tf-tag--warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn); }
+.tf-tip { margin-top: 4px; font-size: 12px; line-height: 1.4; color: var(--fg-mut); overflow-wrap: anywhere; }
+
+.tf-foot { margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: var(--fg-mut); }
+.tf-note { margin: 10px 0 0; font-size: 13px; color: var(--fg-mut); }
+.tf-link {
+  display: inline; padding: 4px 0; margin: 0; background: none; border: 0; border-radius: 6px;
+  font: inherit; font-weight: 600; color: var(--acc-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+
+.tf-msg { margin: 0; font-size: 14px; line-height: 1.45; color: var(--fg); }
+.tf-state { padding: 18px 14px; text-align: center; border-radius: 12px; background: var(--chip); border: 1px dashed var(--glass-border); }
+.tf-state .tf-msg { margin-bottom: 12px; }
+.tf-state .tf-msg:last-child { margin-bottom: 0; }
+.tf-loadtxt { margin: 0 0 10px; font-size: 13px; color: var(--fg-mut); }
+
+/* skeleton */
+.tf-skel {
+  height: 104px; border-radius: 14px;
+  background: linear-gradient(100deg, var(--chip) 30%, var(--chip-on) 50%, var(--chip) 70%) 0 0 / 220% 100%;
+  animation: tf-shimmer 1.5s linear infinite;
+}
+@keyframes tf-shimmer { to { background-position: -220% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .tf-skel { animation: none; }
+  .tf-card { transition: none; }
+}

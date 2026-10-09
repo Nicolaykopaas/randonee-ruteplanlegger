@@ -114,7 +114,7 @@
     var c = ss(key);
     if (c) { mem[id] = { t: c.t, d: c.d }; delete failed[id]; return Promise.resolve(c.d); }
     if (inflight[id]) return inflight[id];
-    var p = schedule(function () { return U.getJSON(url, { timeout: 20000 }); }, front)
+    var p = fetchRaw(id, front)
       .then(function (j) {
         var w = parseWx(j), rec = { t: Date.now(), d: w };
         mem[id] = rec; delete failed[id];
@@ -125,6 +125,97 @@
         function (e) { delete inflight[id]; failed[id] = true; sched(); throw e; });
     inflight[id] = p;
     return p;
+  }
+
+  /* ---------- rått MET-svar (slanket) delt mellom weatherFor og forecastFor ---------- */
+  var rawMem = {};                  // id -> { t, j } (slank timeseries)
+  var rawInflight = {};             // id -> Promise
+
+  function slim(j) {
+    var ts = j && j.properties && j.properties.timeseries;
+    if (!ts) return j;
+    return { properties: { timeseries: ts.map(function (x) {
+      var d = x.data || {}, o = { instant: { details: (d.instant && d.instant.details) || {} } };
+      ["next_1_hours", "next_6_hours", "next_12_hours"].forEach(function (k) {
+        if (d[k]) o[k] = { summary: d[k].summary, details: d[k].details };
+      });
+      return { time: x.time, data: o };
+    }) } };
+  }
+
+  function fetchRaw(id, front) {
+    var m = rawMem[id];
+    if (m && Date.now() - m.t < TTL) return Promise.resolve(m.j);
+    if (rawInflight[id]) return rawInflight[id];
+    var r = S.byId[id];
+    var url = CFG.MET_URL(r.top.lat, r.top.lon, r.topp_moh);
+    var p = schedule(function () { return U.getJSON(url, { timeout: 20000 }); }, front)
+      .then(function (j) {
+        var sj = slim(j);
+        rawMem[id] = { t: Date.now(), j: sj };
+        delete rawInflight[id];
+        return sj;
+      }, function (e) { delete rawInflight[id]; throw e; });
+    rawInflight[id] = p;
+    return p;
+  }
+
+  /* Oslo-klokkeslett (dato + time) -> UTC-ms */
+  function osloMs(dateStr, hour) {
+    var p = dateStr.split("-");
+    for (var off = 1; off <= 2; off++) {
+      var t = Date.UTC(+p[0], +p[1] - 1, +p[2], hour - off);
+      var o = U.oslo(new Date(t));
+      if (o.date === dateStr && o.hour === hour) return t;
+    }
+    return Date.UTC(+p[0], +p[1] - 1, +p[2], hour - 1);
+  }
+
+  /* Nedbør summert over [start, end) fra blandet 1 t/6 t-serie */
+  function sumPrecip(ts, start, end) {
+    var sum = 0, cov = -Infinity;
+    for (var i = 0; i < ts.length; i++) {
+      var t = Date.parse(ts[i].time), d = ts[i].data, dur = 0, p = 0;
+      if (t >= end) break;
+      if (t < cov) continue;
+      if (d.next_1_hours) { dur = 36e5; p = d.next_1_hours.details.precipitation_amount || 0; }
+      else if (d.next_6_hours) { dur = 216e5; p = d.next_6_hours.details.precipitation_amount || 0; }
+      else continue;
+      cov = t + dur;
+      var ov = Math.min(t + dur, end) - Math.max(t, start);
+      if (ov > 0) sum += p * ov / dur;
+    }
+    return Math.round(sum * 10) / 10;
+  }
+
+  /* Prognose for en gitt dag (YYYY-MM-DD, Oslo) kl. ~12; ned = sum 24 t fra kl. 06 den dagen. */
+  function parseDay(j, dateStr) {
+    var ts = j && j.properties && j.properties.timeseries;
+    if (!ts || !ts.length) throw new Error("Tomt svar fra MET");
+    var target = osloMs(dateStr, 12), pick = null, best = Infinity, i;
+    for (i = 0; i < ts.length; i++) {
+      var t = Date.parse(ts[i].time);
+      if (U.oslo(new Date(t)).date !== dateStr) continue;
+      var dist = Math.abs(t - target);
+      if (dist < best) { best = dist; pick = ts[i]; }
+    }
+    if (!pick) throw new Error("Ingen prognose for " + dateStr);
+    var s6 = osloMs(dateStr, 6);
+    var dd = pick.data, n = dd.next_1_hours || dd.next_6_hours || dd.next_12_hours, det = dd.instant.details;
+    var code = n && n.summary && n.summary.symbol_code;
+    return {
+      time: pick.time, temp: det.air_temperature, vind: det.wind_speed, dir: det.wind_from_direction,
+      sym: code || null, symText: sym(code), ned: sumPrecip(ts, s6, s6 + 864e5)
+    };
+  }
+
+  function forecastFor(id, dateStr) {
+    id = Number(id);
+    var r = S.byId[id];
+    if (!S.routes.length) return Promise.reject(new Error("Rutene er ikke lastet ennå"));
+    if (!r) return Promise.reject(new Error("Ukjent tur"));
+    if (!hasLL(r)) return Promise.reject(new Error("Mangler posisjon for toppen"));
+    return fetchRaw(id, false).then(function (j) { return parseDay(j, dateStr); });
   }
 
   function weatherFor(id) {
@@ -138,7 +229,7 @@
     wanted = true;
     if (!S.routes.length) return Promise.resolve();
     if (loadP && !force && (loading || Date.now() - loadedAt < TTL)) return loadP;
-    if (force) { mem = {}; failed = {}; errToasted = false; }
+    if (force) { mem = {}; rawMem = {}; failed = {}; errToasted = false; }
     loading = true; done = 0; anyOk = false;
     var list = S.routes.filter(hasLL);
     total = list.length;
@@ -420,5 +511,5 @@
     if (pane && !pane.hidden) load();
   }
 
-  RR.modules.forhold = { init: init, weatherFor: weatherFor, load: load };
+  RR.modules.forhold = { init: init, weatherFor: weatherFor, load: load, forecastFor: forecastFor };
 })();

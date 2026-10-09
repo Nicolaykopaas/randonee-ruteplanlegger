@@ -551,3 +551,23 @@ body.is-flying #toasts { bottom: 100px; }
 
 /* Programmatisk fokus (tabindex=-1) skal ikke vise ring */
 [tabindex="-1"]:focus { outline: none; }
+
+/* ---------- Ytelse ----------
+   backdrop-filter over et 3D-kart som tegnes kontinuerlig er dyrt (blur regnes ut på nytt hver frame).
+   Mindre radius på desktop; på mobil og under fly over brukes dekkende glass uten blur. */
+:root { --blur: 12px; }
+@media (max-width: 767px) {
+  :root, [data-theme="dark"] { --glass: rgba(20, 18, 30, .9); --glass-strong: rgba(20, 18, 30, .96); }
+  [data-theme="light"] { --glass: rgba(255, 255, 255, .94); --glass-strong: rgba(255, 255, 255, .98); }
+  .glass, #left, #right, .ctl, #flybar, .legend, .toast, .danger-mini > * {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}
+body.is-flying .glass, body.is-flying .ctl {
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+
+/* Mobil: når arket er helt oppe, vik kartknappene for søk og faner */
+@media (max-width: 767px) {
+  body.sheet-max #controls, body.sheet-max #legend, body.sheet-max #danger-mini { opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s; }
+}

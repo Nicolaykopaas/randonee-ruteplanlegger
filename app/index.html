@@ -9,18 +9,24 @@
 <link rel="preconnect" href="https://js.arcgis.com" crossorigin>
 <link rel="preconnect" href="https://services1.arcgis.com" crossorigin>
 <link rel="preconnect" href="https://services.geodataonline.no" crossorigin>
+<link rel="preconnect" href="https://kart.nve.no" crossorigin>
+<link rel="preconnect" href="https://api01.nve.no" crossorigin>
+<!-- Kartmotoren lastes parallelt og blokkerer ikke panelet -->
+<script src="https://js.arcgis.com/4.31/" async id="esri-js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%2300C8FF'/%3E%3Cstop offset='1' stop-color='%23FF3EDB'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M2 27 13 8l5 8 3-4 9 15z' fill='url(%23g)'/%3E%3C/svg%3E">
 <script>
   /* Sett tema før første maling for å unngå blink */
   (function(){try{var t=localStorage.getItem("rr.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}})();
 </script>
-<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" id="esri-theme">
+<link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/dark/main.css" id="esri-theme" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/panel.css">
 <link rel="stylesheet" href="css/card.css">
 <link rel="stylesheet" href="css/scene.css">
 <link rel="stylesheet" href="css/flyover.css">
 <link rel="stylesheet" href="css/forhold.css">
+<link rel="stylesheet" href="css/search.css">
+<link rel="stylesheet" href="css/turfinner.css">
 </head>
 <body>
 <a class="skip" href="#left">Hopp til turlisten</a>
@@ -37,8 +43,10 @@
     <h1 class="brand__title">Randonee <span class="grad-text">ruteplanlegger</span></h1>
     <p class="brand__sub">Toppturer på ski i Romsdal</p>
   </header>
+  <div id="search" class="search-host"></div>
   <div class="tabs" role="tablist" aria-label="Visning">
     <button class="tab" role="tab" id="tab-turer" aria-controls="pane-turer" aria-selected="true">Turer</button>
+    <button class="tab" role="tab" id="tab-finner" aria-controls="pane-finner" aria-selected="false" tabindex="-1">Turfinner</button>
     <button class="tab" role="tab" id="tab-forhold" aria-controls="pane-forhold" aria-selected="false" tabindex="-1">Forhold</button>
   </div>
   <div class="panel-scroll">
@@ -46,6 +54,9 @@
       <div id="danger"></div>
       <div id="finn"></div>
       <div id="list"></div>
+    </section>
+    <section id="pane-finner" role="tabpanel" aria-labelledby="tab-finner" hidden>
+      <div id="finner"></div>
     </section>
     <section id="pane-forhold" role="tabpanel" aria-labelledby="tab-forhold" hidden>
       <div id="forhold"></div>
@@ -82,9 +93,10 @@
 <script src="js/panel.js"></script>
 <script src="js/card.js"></script>
 <script src="js/forhold.js"></script>
+<script src="js/search.js"></script>
+<script src="js/turfinner.js"></script>
 <script src="js/scene.js"></script>
 <script src="js/flyover.js"></script>
-<script src="https://js.arcgis.com/4.31/"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

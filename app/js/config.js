@@ -23,6 +23,8 @@
         "&lon=" + lon.toFixed(4) + "&altitude=" + Math.round(moh || 0);
     },
     LEVELS: ["Lett", "Middels", "Krevende"],
+    ASPECTS: ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"],
+    MAX_START: 800,
     LEVEL_COLORS: { Lett: "#00C8FF", Middels: "#FF3EDB", Krevende: "#FFFFFF" },
     DANGER_COLORS: ["#8A8A96", "#56B528", "#FFE800", "#F18700", "#E61E1E", "#1A1A1A"],
     DANGER_NAMES: ["Ikke vurdert", "Liten", "Moderat", "Betydelig", "Stor", "Meget stor"],
@@ -48,7 +50,10 @@
   var state = {
     routes: [],            // se app.js for objektform
     byId: {},              // id -> rute
-    filter: { maxKm: CFG.MAX_KM, maxHm: CFG.MAX_HM, niva: CFG.LEVELS.slice() },
+    filter: { maxKm: CFG.MAX_KM, maxHm: CFG.MAX_HM, niva: CFG.LEVELS.slice(),
+      aspects: CFG.ASPECTS.slice(),   // himmelretning på nedkjøringen
+      minStart: 0,                    // min. starthøyde (moh)
+      avoidExposed: false },          // skjul >300 m eksponert når faregrad ≥ 3
     sort: "navn",          // navn | km | hm | tid
     visibleIds: [],        // ids som passerer filteret, i sortert rekkefølge
     selectedId: null,
@@ -70,11 +75,35 @@
     tid: function (a, b) { return minutes(a) - minutes(b); }
   };
 
+  /* Himmelretning (8 sektorer) for nedkjøringen, fra grader eller tekst. null hvis ukjent. */
+  function aspectOf(r) {
+    var p = r && r.park;
+    if (!p) return null;
+    if (p.himmelretning_grader != null && isFinite(p.himmelretning_grader)) {
+      return CFG.ASPECTS[Math.round(((+p.himmelretning_grader % 360) + 360) % 360 / 45) % 8];
+    }
+    var t = String(p.himmelretning || "").toUpperCase().replace("OE", "Ø").trim();
+    return CFG.ASPECTS.indexOf(t) !== -1 ? t : null;
+  }
+
+  /* Mye skredterreng på en dag med faregrad ≥ 3 */
+  function isRisky(r) {
+    var d = state.danger;
+    return !!(d && d.level >= 3 && r && r.eksponert_m > 300);
+  }
+
   function passes(r) {
     var f = state.filter;
-    return (r.tur_km == null || r.tur_km <= f.maxKm + 1e-9) &&
-      (r.hoydemeter == null || r.hoydemeter <= f.maxHm + 1e-9) &&
-      f.niva.indexOf(r.niva) !== -1;
+    if (r.tur_km != null && r.tur_km > f.maxKm + 1e-9) return false;
+    if (r.hoydemeter != null && r.hoydemeter > f.maxHm + 1e-9) return false;
+    if (f.niva.indexOf(r.niva) === -1) return false;
+    if (f.minStart > 0 && r.start_moh != null && r.start_moh < f.minStart) return false;
+    if (f.aspects && f.aspects.length < CFG.ASPECTS.length) {
+      var a = aspectOf(r);
+      if (a && f.aspects.indexOf(a) === -1) return false;
+    }
+    if (f.avoidExposed && isRisky(r)) return false;
+    return true;
   }
 
   function applyFilter() {
@@ -193,6 +222,9 @@
     return (mem && mem < 4) || (cores && cores < 4) || !webglOk();
   }
 
+  // «Unngå skredterreng» avhenger av dagens faregrad
+  on("danger", function () { if (state.filter.avoidExposed && state.routes.length) applyFilter(); });
+
   window.RR = {
     CFG: CFG,
     state: state,
@@ -205,7 +237,8 @@
     util: {
       store: store, esc: esc, getJSON: getJSON, oslo: oslo, addDays: addDays, dayName: dayName,
       fmtKm: fmtKm, fmtHm: fmtHm, parseMinutes: parseMinutes, dangerLevel: dangerLevel,
-      toast: toast, webglOk: webglOk, lowPower: lowPower
+      toast: toast, webglOk: webglOk, lowPower: lowPower,
+      aspectOf: aspectOf, isRisky: isRisky
     },
     modules: {}    // hver modul registrerer { init() } her
   };
