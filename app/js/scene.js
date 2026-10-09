@@ -791,6 +791,9 @@
       if (d.id != null && d.source !== "flyover") zoomToRoute(d.id);
     });
     RR.on("theme", function (t) { applyTheme(t); });
+    // Under fly over blir den brede gløden for dominerende nær kameraet
+    RR.on("fly:start", function () { if (hlLayer) hlLayer.visible = false; if (routesLayer) routesLayer.opacity = 1; });
+    RR.on("fly:stop", function () { if (hlLayer) hlLayer.visible = true; if (routesLayer && S.selectedId != null) routesLayer.opacity = 0.5; });
     RR.on("mode", function (m) {
       if ((m === "2d" || m === "3d") && (m !== viewMode || switching)) setMode(m);
     });
