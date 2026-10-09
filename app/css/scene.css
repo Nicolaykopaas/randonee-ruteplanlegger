@@ -1,0 +1,135 @@
+/* scene.css – kart, kartkontroller, tegnforklaring. Bruker kun tema-variabler (med reservefarger). */
+
+/* ---------- kartflate ---------- */
+#map { position: fixed; inset: 0; background: var(--bg, #0d0b16); overflow: hidden; }
+.scene-view { position: absolute; inset: 0; background: var(--bg, #0d0b16); }
+.scene-view .esri-view-surface { outline: none; }
+.scene-view .esri-view-surface::after,
+.scene-view .esri-view-surface--inset-outline:focus::after { outline: none !important; }
+.scene-view.scene-hover .esri-view-surface,
+.scene-view.scene-hover .esri-view-surface * { cursor: pointer !important; }
+
+/* ---------- skjul/demp standard-UI fra ArcGIS ---------- */
+.scene-view .esri-ui .esri-widget:not(.esri-attribution),
+.scene-view .esri-ui .esri-component:not(.esri-attribution) { display: none; }
+.scene-view .esri-ui .esri-ui-corner { z-index: 1; }
+.scene-view .esri-attribution {
+  background: transparent; color: var(--fg-faint, rgba(255, 255, 255, .6));
+  font-family: var(--font, system-ui, sans-serif); font-size: 10px; line-height: 1.4;
+  max-width: min(60vw, 520px);
+}
+.scene-view .esri-attribution a { color: inherit; }
+.scene-view .esri-attribution__powered-by { color: inherit; opacity: .8; }
+.scene-view .esri-ui-bottom-trailing,
+.scene-view .esri-ui-bottom-right { right: 72px; bottom: 2px; }
+body.has-card .scene-view .esri-ui-bottom-trailing,
+body.has-card .scene-view .esri-ui-bottom-right { right: 72px; }
+.scene-view .esri-ui-bottom-leading,
+.scene-view .esri-ui-bottom-left { display: none; }
+
+/* ---------- kontroller ---------- */
+#controls {
+  position: fixed; right: 12px; bottom: 24px; z-index: 40;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.ctl {
+  position: relative; box-sizing: border-box;
+  width: 44px; height: 44px; padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--fg, #fff); font: 700 14px/1 var(--font, system-ui, sans-serif); letter-spacing: .01em;
+  background: var(--glass, rgba(20, 18, 30, .62));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, .14));
+  border-radius: var(--radius-sm, 10px);
+  -webkit-backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
+  backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
+  box-shadow: var(--shadow, 0 6px 24px rgba(0, 0, 0, .35));
+  cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+}
+.ctl svg { display: block; width: 22px; height: 22px; pointer-events: none; }
+.ctl__txt { pointer-events: none; }
+.ctl:hover { background: var(--glass-strong, rgba(20, 18, 30, .85)); transform: translateY(-1px); }
+.ctl:active { transform: translateY(0) scale(.96); }
+.ctl:focus-visible { outline: 2px solid var(--focus, #00C8FF); outline-offset: 2px; }
+.ctl:disabled { opacity: .55; cursor: progress; }
+.ctl[aria-busy="true"] svg { animation: scene-spin 1.2s linear infinite; }
+/* På-tilstand: gradient-kant */
+.ctl[aria-pressed="true"],
+.ctl[aria-expanded="true"] {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--glass-strong, rgba(20, 18, 30, .85)), var(--glass-strong, rgba(20, 18, 30, .85))) padding-box,
+    var(--grad, linear-gradient(90deg, #00C8FF, #FF3EDB)) border-box;
+}
+.ctl[aria-pressed="true"] svg { color: var(--acc-text, #00C8FF); }
+
+@keyframes scene-spin { to { transform: rotate(360deg); } }
+
+/* ---------- tegnforklaring ---------- */
+#legend.legend {
+  position: fixed; right: 68px; bottom: 32px; z-index: 41;
+  width: 252px; max-width: calc(100vw - 80px); max-height: calc(100% - 64px); overflow-y: auto;
+  box-sizing: border-box; padding: 12px 14px 14px;
+  color: var(--fg, #fff); font: 13px/1.35 var(--font, system-ui, sans-serif);
+  border-radius: var(--radius, 16px);
+}
+#legend.legend[hidden] { display: none; }
+body.has-card #legend.legend { right: 376px; }
+.scene-legend__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.scene-legend__title { margin: 0; font-size: 14px; font-weight: 700; }
+.scene-legend__close {
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin: -4px -6px -4px 0;
+  padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--fg-mut, rgba(255, 255, 255, .75)); cursor: pointer;
+}
+.scene-legend__close:hover { background: var(--chip, rgba(255, 255, 255, .1)); color: var(--fg, #fff); }
+.scene-legend__close:focus-visible { outline: 2px solid var(--focus, #00C8FF); outline-offset: 1px; }
+.scene-legend__sub {
+  margin: 12px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--fg-mut, rgba(255, 255, 255, .75));
+}
+.scene-legend__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.scene-legend__list li { display: flex; align-items: center; gap: 10px; }
+.scene-legend__list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.scene-legend__line {
+  flex: 0 0 34px; height: 4px; border-radius: 3px; background: var(--c, #00C8FF);
+  box-shadow: 0 0 0 2px rgba(8, 6, 16, .6), 0 0 8px var(--c, #00C8FF);
+}
+.scene-legend__line--sel { height: 6px; animation: scene-pulse 1.6s ease-in-out infinite; }
+.scene-legend__sw { flex: 0 0 22px; height: 14px; border-radius: 3px; border: 1px solid var(--glass-border, rgba(255, 255, 255, .3)); }
+.scene-legend__pin {
+  flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; color: #0a3a52; border: 2.5px solid #00C8FF; box-sizing: border-box; font: 700 11px/1 var(--font, system-ui, sans-serif);
+  margin: 0 6px 0 6px;
+}
+.scene-legend--nosteep .scene-legend__steep { opacity: .45; }
+.scene-legend--nosteep .scene-legend__steep .scene-legend__sub::after { content: " (skjult)"; text-transform: none; letter-spacing: 0; }
+
+@keyframes scene-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(8, 6, 16, .6), 0 0 4px var(--c, #00C8FF); }
+  50% { box-shadow: 0 0 0 2px rgba(8, 6, 16, .6), 0 0 14px var(--c, #00C8FF); }
+}
+
+/* ---------- mobil ---------- */
+@media (max-width: 767px) {
+  #controls { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; bottom: auto; }
+  #legend.legend,
+  body.has-card #legend.legend {
+    right: 68px; bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px));
+    width: 236px; max-height: calc(100% - 140px);
+  }
+  .scene-view .esri-ui-bottom-trailing,
+  .scene-view .esri-ui-bottom-right,
+  body.has-card .scene-view .esri-ui-bottom-trailing,
+  body.has-card .scene-view .esri-ui-bottom-right {
+    bottom: auto; right: auto; top: 2px; left: 50%; transform: translateX(-50%);
+  }
+  .scene-view .esri-attribution { max-width: 46vw; }
+}
+
+/* ---------- redusert bevegelse ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ctl { transition: none; }
+  .ctl:hover, .ctl:active { transform: none; }
+  .ctl[aria-busy="true"] svg { animation: none; }
+  .scene-legend__line--sel { animation: none; }
+}
