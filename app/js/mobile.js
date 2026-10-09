@@ -202,6 +202,7 @@
       h.setAttribute("aria-expanded", sheet === "min" ? "false" : "true");
     });
     document.body.classList.toggle("sheet-min", !!S.isMobile && sheet === "min" && !dragging);
+    document.body.classList.toggle("sheet-max", !!S.isMobile && sheet === "max");
   }
 
   function setSheet(h) {
