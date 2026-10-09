@@ -566,3 +566,8 @@ body.is-flying #toasts { bottom: 100px; }
 body.is-flying .glass, body.is-flying .ctl {
   -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
 }
+
+/* Mobil: når arket er helt oppe, vik kartknappene for søk og faner */
+@media (max-width: 767px) {
+  body.sheet-max #controls, body.sheet-max #legend, body.sheet-max #danger-mini { opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s; }
+}
