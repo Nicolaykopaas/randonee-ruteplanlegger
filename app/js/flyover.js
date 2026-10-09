@@ -448,7 +448,7 @@
   function frame(tok, ts) {
     if (tok !== token) return;
     raf = requestAnimationFrame(function (t2) { frame(tok, t2); });
-    var dt = lastTs ? Math.min(0.1, Math.max(0, (ts - lastTs) / 1000)) : 0;
+    var dt = lastTs ? Math.min(0.5, Math.max(0, (ts - lastTs) / 1000)) : 0;
     lastTs = ts;
     if (!isRunning()) return;
     var v = view3d();
