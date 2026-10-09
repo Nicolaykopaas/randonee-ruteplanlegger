@@ -59,7 +59,8 @@
           var ll = pll[a[oidP]] || {};
           park[a.rute_id] = {
             x: g.x, y: g.y, z: g.z, lat: ll.lat, lon: ll.lon,
-            est_tid_tekst: a.est_tid_tekst, minutes: U.parseMinutes(a.est_tid_tekst),
+            est_tid_tekst: a.est_tid_tekst, minutes: a.est_tid_min != null ? a.est_tid_min : U.parseMinutes(a.est_tid_tekst),
+            topp_lat: a.topp_lat, topp_lon: a.topp_lon,
             himmelretning: a.himmelretning, himmelretning_grader: a.himmelretning_grader,
             forhold_tips: a.forhold_tips, nav_url: a.nav_url, yr_url: a.yr_url
           };
@@ -70,7 +71,8 @@
         .map(function (f) {
           var a = f.attributes, id = a[oidR], paths = f.geometry.paths;
           var last = paths[paths.length - 1], top = last[last.length - 1], first = paths[0][0];
-          var ll = geo4326[id] || {};
+          var ll = geo4326[id] || {}, pk = park[id];
+          if (!ll.top && pk && pk.topp_lat != null) ll.top = { lat: pk.topp_lat, lon: pk.topp_lon };
           return {
             id: id,
             navn: a.navn || "Uten navn",
