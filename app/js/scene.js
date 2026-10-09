@@ -288,7 +288,7 @@
     var set = {};
     ids.forEach(function (i) { set[i] = true; });
     S.routes.forEach(function (r) {
-      var v = !!set[r.id];
+      var v = !!set[r.id] || r.id === S.selectedId;   // valgt tur vises selv om filteret skjuler den
       if (routeG[r.id]) routeG[r.id].visible = v;
       if (pointG[r.id]) pointG[r.id].visible = v;
     });
@@ -813,6 +813,7 @@
     });
     RR.on("filter", function (d) { applyVisibility((d && d.ids) || []); });
     RR.on("select", function (d) {
+      applyVisibility(S.visibleIds);
       updateHighlight(d.id);
       updatePadding();
       if (d.id != null && d.source !== "flyover") zoomToRoute(d.id);
