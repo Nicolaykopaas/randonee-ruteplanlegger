@@ -6,7 +6,7 @@
   var SHEETS = ["min", "mid", "max"];
   var SHEET_LABEL = { min: "lav", mid: "middels", max: "høy" };
   var MIN_PX = 104;
-  var TABS = ["turer", "forhold"];
+  var TABS = ["turer", "finner", "forhold"];
 
   var inited = false;
   var tab = "turer";

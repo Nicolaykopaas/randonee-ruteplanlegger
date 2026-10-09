@@ -228,6 +228,7 @@
     steepLayer = new E.MapImageLayer({
       url: CFG.STEEPNESS_URL, id: "rr-steep", title: "Bratthet (NVE)",
       sublayers: [{ id: 0, visible: true }],
+      imageFormat: "png8",   // ~4x mindre enn png24/32 for denne fargeflaten
       opacity: CFG.STEEPNESS_OPACITY, visible: S.steepness !== false
     });
     routesLayer = new E.GraphicsLayer({ id: "rr-routes", title: "Ruter", listMode: "hide", elevationInfo: { mode: "on-the-ground" } });
@@ -236,7 +237,7 @@
     topLayer = new E.GraphicsLayer({ id: "rr-top", title: "Topp", listMode: "hide", elevationInfo: { mode: "relative-to-ground", offset: 0 } });
     locLayer = new E.GraphicsLayer({ id: "rr-loc", title: "Min posisjon", listMode: "hide", elevationInfo: { mode: "on-the-ground" } });
     map = new E.Map({ basemap: basemap, ground: ground });
-    map.addMany([steepLayer, routesLayer, hlLayer, pointsLayer, topLayer, locLayer]);
+    map.addMany([routesLayer, hlLayer, pointsLayer, topLayer, locLayer]);
 
     imageryLayer.load().catch(function () {
       // Uten flyfoto mangler 3D-scenen flisskjema og blir blank – fall tilbake til 2D.
@@ -307,12 +308,15 @@
     stopPulse();
     if (!hl) return;
     if (reduced) { setGlow(0.8); return; }
-    var last = 0;
+    // Pulsen tvinger kartet til å tegne på nytt – begrens til noen sekunder og ~12 fps
+    var last = 0, t0 = 0, PULSE_MS = 6000;
     function tick(t) {
+      if (!t0) t0 = t;
+      if (t - t0 > PULSE_MS) { rafId = 0; setGlow(0.8); return; }
       rafId = requestAnimationFrame(tick);
-      if (t - last < 40) return;
+      if (t - last < 80) return;
       last = t;
-      setGlow(0.5 + 0.5 * Math.sin(t / 380));
+      setGlow(0.5 + 0.5 * Math.sin((t - t0) / 380));
     }
     rafId = requestAnimationFrame(tick);
   }
@@ -398,6 +402,8 @@
   }
 
   function createView(mode, carry) {
+    var cls = mode === "3d" ? "SceneView" : "MapView";
+    if (!E[cls] && RR.loadEsri) return RR.loadEsri([cls]).then(function () { return createView(mode, carry); });
     host = document.createElement("div");
     host.className = "scene-view scene-view--" + mode;
     mapEl.appendChild(host);
@@ -413,7 +419,7 @@
     if (mode === "3d") {
       var weak = U.lowPower && U.lowPower();
       common.viewingMode = "local";
-      common.qualityProfile = weak ? "low" : (S.isMobile ? "medium" : "high");
+      common.qualityProfile = (weak || S.isMobile) ? "low" : "medium";
       common.environment = envFor(theme);
       common.constraints = { altitude: { max: 90000 }, tilt: { max: 84 } };
       v = new E.SceneView(common);
@@ -481,7 +487,28 @@
     if (pendingZoom != null) {
       var id = pendingZoom; pendingZoom = null;
       if (S.selectedId === id) zoomToRoute(id);
+    } else if (!firstReady && S.selectedId != null) {
+      zoomToRoute(S.selectedId);   // tur valgt (f.eks. fra ?tur=) før kartet var klart
     }
+    firstReady = true;
+    addSteepWhenIdle(v);
+  }
+
+  /* Bratthet fra NVE er ikke flislagt (store PNG-eksporter) – legg den til først når
+     flyfoto og terreng er ferdig lastet, så de prioriteres. */
+  var firstReady = false, steepAdded = false;
+  function addSteepWhenIdle(v) {
+    if (steepAdded || !steepLayer || !map) return;
+    var R = E.reactiveUtils;
+    var go = function () {
+      if (steepAdded) return;
+      steepAdded = true;
+      map.add(steepLayer, 0);
+    };
+    if (R && R.whenOnce) {
+      R.whenOnce(function () { return !v.updating; }).then(go, go);
+      setTimeout(go, 8000);
+    } else go();
   }
 
   function setMode(mode) {

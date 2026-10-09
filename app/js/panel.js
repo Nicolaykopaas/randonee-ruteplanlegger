@@ -9,6 +9,8 @@
     ["hm", "Minst hm", "Sorter etter færrest høydemeter"],
     ["tid", "Tid", "Sorter etter tid"]
   ];
+  var ASPECT_NAMES = { "N": "Nord", "NØ": "Nordøst", "Ø": "Øst", "SØ": "Sørøst", "S": "Sør", "SV": "Sørvest", "V": "Vest", "NV": "Nordvest" };
+  var MORE_KEY = "rr.panel.more";
   var DANGER_REFRESH_MS = 60 * 60 * 1000;
   var LONG_TEXT = 140;
 
@@ -140,6 +142,32 @@
   /* =========================================================
      Finn tur
      ========================================================= */
+  function polar(r, deg) {
+    var a = deg * Math.PI / 180;
+    return (80 + r * Math.sin(a)).toFixed(2) + " " + (80 - r * Math.cos(a)).toFixed(2);
+  }
+
+  function compassHtml() {
+    var RO = 73, RI = 27, GAP = 1.3;
+    var secs = CFG.ASPECTS.map(function (a, i) {
+      var c = i * 45, a0 = c - 22.5 + GAP, a1 = c + 22.5 - GAP;
+      var d = "M" + polar(RO, a0) + " A" + RO + " " + RO + " 0 0 1 " + polar(RO, a1) +
+        " L" + polar(RI, a1) + " A" + RI + " " + RI + " 0 0 0 " + polar(RI, a0) + " Z";
+      var lp = polar(51, c).split(" ");
+      return '<g class="panel-sec" role="button" tabindex="0" data-asp="' + esc(a) + '" aria-pressed="true"><title></title>' +
+        '<path class="panel-sec__p" d="' + d + '"/>' +
+        '<text class="panel-sec__t" text-anchor="middle" aria-hidden="true"><tspan class="panel-sec__n" x="' + lp[0] + '" y="' + (+lp[1] - 1) + '">' + esc(a) + "</tspan>" +
+        '<tspan class="panel-sec__c" x="' + lp[0] + '" y="' + (+lp[1] + 9.5) + '"></tspan></text></g>';
+    }).join("");
+    return '<svg class="panel-compass" id="panel-compass" viewBox="0 0 160 160" role="group" aria-labelledby="panel-asp-l" focusable="false">' +
+      '<defs><linearGradient id="panel-cg" gradientUnits="userSpaceOnUse" x1="14" y1="14" x2="146" y2="146">' +
+      '<stop offset="0" style="stop-color:var(--acc1)"/><stop offset="1" style="stop-color:var(--acc2)"/></linearGradient></defs>' +
+      secs +
+      '<g class="panel-sec panel-sec--all" role="button" tabindex="0" data-asp-all="1" aria-pressed="true" aria-label="Alle himmelretninger"><title>Alle himmelretninger</title>' +
+      '<circle class="panel-sec__p" cx="80" cy="80" r="22"/>' +
+      '<text class="panel-sec__n" x="80" y="84" text-anchor="middle" aria-hidden="true">Alle</text></g></svg>';
+  }
+
   function finnHtml() {
     var chips = CFG.LEVELS.map(function (n) {
       return '<button type="button" class="chip panel-chip" data-niva="' + esc(n) + '" aria-pressed="true">' +
@@ -148,12 +176,25 @@
     return '<section class="panel-card panel-finn" aria-labelledby="panel-finn-h">' +
       '<div class="panel-finn__head"><h2 class="panel-h panel-h--grad" id="panel-finn-h">Finn tur</h2>' +
       '<button type="button" class="panel-link" id="panel-reset" hidden>Nullstill</button></div>' +
+      '<div class="panel-avoid" id="panel-avoid-box">' +
+      '<button type="button" class="panel-switch" id="panel-avoid" role="switch" aria-checked="false" aria-describedby="panel-avoid-hint">' +
+      '<span class="panel-switch__l">Unngå skredterreng i dag</span><span class="panel-switch__track" aria-hidden="true"><span class="panel-switch__knob"></span></span></button>' +
+      '<p class="panel-avoid__hint" id="panel-avoid-hint"></p></div>' +
       '<div class="panel-field"><div class="panel-field__top"><label for="panel-km">Maks lengde</label><output for="panel-km" id="panel-km-out"></output></div>' +
       '<input type="range" class="panel-range" id="panel-km" min="0" max="' + CFG.MAX_KM + '" step="0.5"></div>' +
       '<div class="panel-field"><div class="panel-field__top"><label for="panel-hm">Maks høydemeter</label><output for="panel-hm" id="panel-hm-out"></output></div>' +
       '<input type="range" class="panel-range" id="panel-hm" min="0" max="' + CFG.MAX_HM + '" step="50"></div>' +
       '<div class="panel-field"><div class="panel-field__top"><span id="panel-niva-l">Nivå</span></div>' +
-      '<div class="panel-chips" role="group" aria-labelledby="panel-niva-l">' + chips + "</div></div></section>";
+      '<div class="panel-chips" role="group" aria-labelledby="panel-niva-l">' + chips + "</div></div>" +
+      '<details class="panel-more" id="panel-more"><summary class="panel-more__sum"><span>Flere filtre</span>' +
+      '<span class="panel-badge" id="panel-more-n" hidden></span><span class="panel-more__chev" aria-hidden="true"></span></summary>' +
+      '<div class="panel-field"><div class="panel-field__top"><span id="panel-asp-l">Himmelretning</span><output id="panel-asp-out"></output></div>' +
+      compassHtml() +
+      '<p class="panel-hint" id="panel-asp-note" hidden></p></div>' +
+      '<div class="panel-field"><div class="panel-field__top"><label for="panel-start">Min. starthøyde</label><output for="panel-start" id="panel-start-out"></output></div>' +
+      '<input type="range" class="panel-range panel-range--min" id="panel-start" min="0" max="' + CFG.MAX_START + '" step="50">' +
+      '<p class="panel-hint">Høy start = snø fra bilen tidlig og sent i sesongen.</p></div>' +
+      "</details></section>";
   }
 
   function setRange(inp, out, val, fmt) {
@@ -167,10 +208,60 @@
     inp.setAttribute("aria-valuetext", txt);
   }
 
+  function allAspects() { return (S.filter.aspects || []).length >= CFG.ASPECTS.length; }
+
   function isDefaultFilter() {
     var f = S.filter;
     return f.maxKm >= CFG.MAX_KM && f.maxHm >= CFG.MAX_HM &&
-      CFG.LEVELS.every(function (n) { return f.niva.indexOf(n) !== -1; });
+      CFG.LEVELS.every(function (n) { return f.niva.indexOf(n) !== -1; }) &&
+      allAspects() && !(f.minStart > 0) && !f.avoidExposed;
+  }
+
+  function countTxt(n) { return n === 0 ? "ingen turer" : n === 1 ? "1 tur" : n + " turer"; }
+
+  function aspectCounts() {
+    var c = {};
+    CFG.ASPECTS.forEach(function (a) { c[a] = 0; });
+    var unknown = 0;
+    S.routes.forEach(function (r) {
+      var a = U.aspectOf(r);
+      if (a && c[a] != null) c[a]++; else unknown++;
+    });
+    return { c: c, unknown: unknown };
+  }
+
+  function updateCompass() {
+    if (!els.secs) return;
+    var ac = aspectCounts(), sel = S.filter.aspects || [], all = allAspects();
+    els.secs.forEach(function (g) {
+      var a = g.dataset.asp, n = ac.c[a] || 0, on = sel.indexOf(a) !== -1;
+      var label = ASPECT_NAMES[a] + " (" + countTxt(n) + ")";
+      g.setAttribute("aria-pressed", on ? "true" : "false");
+      g.firstElementChild.nextElementSibling.style.fill = on ? "url(#panel-cg)" : ""; // inline: url() i ekstern CSS er skjør
+      g.setAttribute("aria-label", label);
+      g.setAttribute("data-empty", n === 0 ? "true" : "false");
+      g.querySelector("title").textContent = label;
+      g.querySelector(".panel-sec__c").textContent = S.routes.length ? n : "";
+    });
+    els.aspAll.setAttribute("aria-pressed", all ? "true" : "false");
+    els.aspOut.textContent = all ? "Alle" : sel.length <= 3
+      ? CFG.ASPECTS.filter(function (a) { return sel.indexOf(a) !== -1; }).join(", ")
+      : sel.length + " av " + CFG.ASPECTS.length;
+    if (ac.unknown > 0 && S.routes.length) {
+      els.aspNote.hidden = false;
+      els.aspNote.textContent = (ac.unknown === 1 ? "1 tur mangler kjent retning og vises alltid." : ac.unknown + " turer mangler kjent retning og vises alltid.");
+    } else els.aspNote.hidden = true;
+  }
+
+  function updateHint() {
+    if (!els.avoidHint) return;
+    var d = S.danger, lvl = d ? d.level | 0 : 0, f = S.filter;
+    var hot = lvl >= 3;
+    els.avoidBox.setAttribute("data-on", f.avoidExposed ? "true" : "false");
+    els.avoidHint.setAttribute("data-hot", hot ? "true" : "false");
+    els.avoidHint.textContent = hot
+      ? "Skjuler turer med over 300 m skredterreng (faregrad " + lvl + " i dag)."
+      : "Slår inn ved faregrad 3 eller høyere." + (d ? " I dag: " + d.name + "." : "");
   }
 
   function syncControls() {
@@ -179,6 +270,13 @@
     setRange(els.km, els.kmOut, f.maxKm, function (v) { return v.toLocaleString("nb-NO") + " km"; });
     setRange(els.hm, els.hmOut, f.maxHm, function (v) { return v.toLocaleString("nb-NO") + " hm"; });
     els.chips.forEach(function (c) { c.setAttribute("aria-pressed", f.niva.indexOf(c.dataset.niva) !== -1 ? "true" : "false"); });
+    els.avoid.setAttribute("aria-checked", f.avoidExposed ? "true" : "false");
+    updateHint();
+    updateCompass();
+    setMinStart(f.minStart);
+    var adv = (allAspects() ? 0 : 1) + (f.minStart > 0 ? 1 : 0);
+    els.moreN.hidden = adv === 0;
+    els.moreN.innerHTML = adv ? adv + '<span class="panel-sr"> aktive</span>' : "";
     els.reset.hidden = isDefaultFilter();
     if (els.seg) {
       Array.prototype.forEach.call(els.seg.querySelectorAll("button"), function (b) {
@@ -187,15 +285,54 @@
     }
   }
 
+  function setMinStart(val) {
+    var inp = els.start, v = Number(val) || 0, max = Number(inp.max);
+    if (Number(inp.value) !== v) inp.value = v;
+    var cur = Number(inp.value);
+    inp.style.setProperty("--p", (cur / max * 100) + "%");
+    var txt = cur <= 0 ? "Alle" : "≥ " + cur.toLocaleString("nb-NO") + " moh";
+    els.startOut.textContent = txt;
+    inp.setAttribute("aria-valuetext", txt);
+  }
+
   function resetFilter() {
     var focusKm = document.activeElement === els.reset;
     var inList = els.list && els.list.contains(document.activeElement);
-    RR.setFilter({ maxKm: CFG.MAX_KM, maxHm: CFG.MAX_HM, niva: CFG.LEVELS.slice() });
+    RR.setFilter({ maxKm: CFG.MAX_KM, maxHm: CFG.MAX_HM, niva: CFG.LEVELS.slice(),
+      aspects: CFG.ASPECTS.slice(), minStart: 0, avoidExposed: false });
     if (focusKm && els.km) els.km.focus();
     else if (inList) {
       var r = els.list.querySelector(".panel-row");
       if (r) r.focus({ preventScroll: true });
     }
+  }
+
+  function toggleAspect(a) {
+    var cur = (S.filter.aspects || []).slice(), i = cur.indexOf(a);
+    if (i !== -1) cur.splice(i, 1); else cur.push(a);
+    // minst én retning må være valgt – hvis siste skrus av, velg alle igjen
+    if (!cur.length) cur = CFG.ASPECTS.slice();
+    cur.sort(function (x, y) { return CFG.ASPECTS.indexOf(x) - CFG.ASPECTS.indexOf(y); });
+    RR.setFilter({ aspects: cur });
+  }
+
+  function onCompassKey(e) {
+    var g = e.target.closest ? e.target.closest(".panel-sec") : null;
+    if (!g) return;
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      activateSector(g);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+      var all = Array.prototype.slice.call(els.compass.querySelectorAll(".panel-sec"));
+      var i = all.indexOf(g), step = (e.key === "ArrowRight" || e.key === "ArrowDown") ? 1 : -1;
+      e.preventDefault();
+      all[(i + step + all.length) % all.length].focus();
+    }
+  }
+
+  function activateSector(g) {
+    if (g.hasAttribute("data-asp-all")) RR.setFilter({ aspects: CFG.ASPECTS.slice() });
+    else toggleAspect(g.dataset.asp);
   }
 
   function toggleLevel(n) {
@@ -221,19 +358,25 @@
       '<div class="panel-listbody" id="panel-listbody"></div></section>';
   }
 
-  function isExposed(r) {
-    return !!(S.danger && S.danger.level >= 3 && r.eksponert_m > 300);
-  }
-
   function rowHtml(r) {
     var meta = [U.fmtKm(r.tur_km), U.fmtHm(r.hoydemeter)];
     if (r.park && r.park.est_tid_tekst) meta.push(esc(r.park.est_tid_tekst));
+    var asp = U.aspectOf(r);
+    if (asp) meta.push('<span aria-hidden="true">' + esc(asp) + '</span><span class="panel-sr">nedkjøring mot ' + esc((ASPECT_NAMES[asp] || asp).toLowerCase()) + "</span>");
     var cur = S.selectedId === r.id;
     return '<li><button type="button" class="panel-row" data-id="' + esc(r.id) + '"' + (cur ? ' aria-current="true"' : "") + ">" +
       '<span class="lvl-dot" data-niva="' + esc(r.niva) + '" aria-hidden="true"></span>' +
       '<span class="panel-row__main"><span class="panel-row__name">' + esc(r.navn) +
-      (isExposed(r) ? ' <span class="panel-tag" title="' + esc(Math.round(r.eksponert_m)) + ' m eksponert terreng">Eksponert</span>' : "") +
+      (U.isRisky(r) ? ' <span class="panel-tag" title="' + esc(Math.round(r.eksponert_m)) + ' m eksponert terreng">Eksponert</span>' : "") +
       '</span><span class="panel-row__meta">' + meta.join(" · ") + '<span class="panel-sr">. Nivå ' + esc(r.niva) + "</span></span></span></button></li>";
+  }
+
+  function emptyText() {
+    var f = S.filter, tips = [];
+    if (!allAspects()) tips.push("flere himmelretninger");
+    if (f.minStart > 0) tips.push("lavere starthøyde");
+    if (f.avoidExposed && S.danger && S.danger.level >= 3) tips.push("å slå av «Unngå skredterreng»");
+    return "Ingen turer passer filteret." + (tips.length ? " Prøv " + tips.join(" eller ") + "." : "");
   }
 
   function renderList() {
@@ -257,7 +400,7 @@
       showSeg = true;
       if (!ids.length) {
         html = '<div class="panel-state"><p class="panel-msg">' +
-          (S.routes.length ? "Ingen turer passer filteret." : "Ingen turer funnet.") + "</p>" +
+          (S.routes.length ? emptyText() : "Ingen turer funnet.") + "</p>" +
           (S.routes.length ? '<button type="button" class="btn panel-btn" data-act="reset">Nullstill filter</button>' : "") + "</div>";
       } else {
         html = '<ul class="panel-list">' + ids.map(function (id) { return S.byId[id]; })
@@ -315,11 +458,28 @@
     els.km = $("panel-km"); els.kmOut = $("panel-km-out");
     els.hm = $("panel-hm"); els.hmOut = $("panel-hm-out");
     els.reset = $("panel-reset");
+    els.avoid = $("panel-avoid"); els.avoidBox = $("panel-avoid-box"); els.avoidHint = $("panel-avoid-hint");
+    els.start = $("panel-start"); els.startOut = $("panel-start-out");
+    els.compass = $("panel-compass"); els.aspOut = $("panel-asp-out"); els.aspNote = $("panel-asp-note");
+    els.aspAll = els.compass.querySelector("[data-asp-all]");
+    els.secs = Array.prototype.slice.call(els.compass.querySelectorAll("[data-asp]"));
+    els.more = $("panel-more"); els.moreN = $("panel-more-n");
     els.chips = Array.prototype.slice.call(els.finn.querySelectorAll(".panel-chip"));
     els.km.addEventListener("input", function () { RR.setFilter({ maxKm: parseFloat(els.km.value) }); });
     els.hm.addEventListener("input", function () { RR.setFilter({ maxHm: parseFloat(els.hm.value) }); });
     els.chips.forEach(function (c) { c.addEventListener("click", function () { toggleLevel(c.dataset.niva); }); });
     els.reset.addEventListener("click", resetFilter);
+    els.avoid.addEventListener("click", function () { RR.setFilter({ avoidExposed: !S.filter.avoidExposed }); });
+    els.start.addEventListener("input", function () { RR.setFilter({ minStart: parseFloat(els.start.value) || 0 }); });
+    els.compass.addEventListener("click", function (e) {
+      var g = e.target.closest ? e.target.closest(".panel-sec") : null;
+      if (g) activateSector(g);
+    });
+    els.compass.addEventListener("keydown", onCompassKey);
+    try { els.more.open = sessionStorage.getItem(MORE_KEY) === "1"; } catch (e) { /* ignorer */ }
+    els.more.addEventListener("toggle", function () {
+      try { sessionStorage.setItem(MORE_KEY, els.more.open ? "1" : "0"); } catch (e) { /* ignorer */ }
+    });
 
     // Liste
     els.list.innerHTML = listShell();
@@ -357,11 +517,11 @@
     renderList();
     markSelected({ id: S.selectedId, source: "list" });
 
-    RR.on("data:routes", function () { loaded = true; loadError = false; });
+    RR.on("data:routes", function () { loaded = true; loadError = false; updateCompass(); });
     RR.on("data:error", function () { if (!S.routes.length) { loadError = true; renderList(); } });
     RR.on("filter", function () { syncControls(); renderList(); });
     RR.on("select", function (d) { markSelected(d); });
-    RR.on("danger", function () { renderList(); });
+    RR.on("danger", function () { updateHint(); renderList(); });
 
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden && dangerStatus === "ok" && Date.now() - dangerAt > DANGER_REFRESH_MS) loadDanger();
